@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Training Penalty Notice Generator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2196F3;
+            --secondary-color: #FFC107;
+            --text-color: #333;
+            --background-color: #f4f4f6;
+            --white: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            line-height: 1.6;
+            color: var(--text-color);
+        }
+
+        .container {
+            background-color: var(--white);
+            border-radius: 16px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08);
+            max-width: 600px;
+            width: 100%;
+            overflow: hidden;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .input-section {
+            padding: 25px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .input-group input {
+            flex-grow: 1;
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+        }
+
+        .input-group button {
+            background-color: var(--primary-color);
+            color: var(--white);
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+        }
+
+        .input-group button:hover {
+            background-color: #1976D2;
+        }
+
+        .input-group button:active {
+            transform: scale(0.98);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-bottom: 20px;
+        }
+
+        table th, table td {
+            border: 1px solid #e0e0e0;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .remove-btn {
+            background-color: #F44336;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .total-amount {
+            text-align: right;
+            font-weight: bold;
+            margin-bottom: 20px;
+            padding-right: 10px;
+            font-size: 18px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+        }
+
+        #generateBtn, #downloadBtn {
+            flex-grow: 1;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            text-align: center;
+            text-decoration: none;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+        }
+
+        #generateBtn {
+            background-color: var(--primary-color);
+            color: var(--white);
+        }
+
+        #downloadBtn {
+            background-color: #F44336;
+            color: var(--white);
+            display: none;
+        }
+
+        #noticePreview {
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+
+        #noticeCanvas {
+            max-width: 100%;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    
+    <div class="container">
+        <div class="input-section">
+            <div class="input-group">
+                <input type="text" id="name" placeholder="Enter Name">
+                <input type="number" id="amount" placeholder="Enter Amount">
+                <button onclick="addEntry()">Add</button>
+            </div>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Amount (Rs)</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="entryTable"></tbody>
+            </table>
+            
+            <div class="total-amount">
+                <span>Total Amount: ₹ </span>
+                <span id="totalAmount">0</span>
+            </div>
+            
+            <div class="button-group">
+                <button id="generateBtn" onclick="generateImage()">Generate Notice</button>
+                <a id="downloadBtn" href="#" download="training_penalty_notice.png">Download Image</a>
+            </div>
+        </div>
+        
+        <div id="noticePreview">
+            <canvas id="noticeCanvas"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let entries = [];
+        const PENALTY_REASON = "English-Only Training Violation";
+
+        // Utility function to format date
+        function formatDate(date) {
+            return date.toLocaleDateString('en-US', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+            });
+        }
+
+        // Add entry function with enhanced validation
+        function addEntry() {
+            const nameInput = document.getElementById("name");
+            const amountInput = document.getElementById("amount");
+            const name = nameInput.value.trim();
+            const amount = amountInput.value.trim();
+
+            // Enhanced validation
+            if (name === "") {
+                alert("Name is required");
+                return;
+            }
+
+            if (amount === "" || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
+                alert("Valid amount is required");
+                return;
+            }
+
+            // Add entry
+            entries.push({ 
+                name, 
+                amount: parseFloat(amount),
+                timestamp: new Date()
+            });
+
+            // Reset inputs
+            nameInput.value = "";
+            amountInput.value = "";
+            
+            updateTable();
+        }
+
+        // Remove entry function
+        function removeEntry(index) {
+            entries.splice(index, 1);
+            updateTable();
+        }
+
+        // Update table with enhanced styling
+        function updateTable() {
+            const table = document.getElementById("entryTable");
+            const totalAmountElement = document.getElementById("totalAmount");
+            
+            // Clear existing table
+            table.innerHTML = "";
+
+            // Calculate total amount
+            const totalAmount = entries.reduce((sum, entry) => sum + entry.amount, 0);
+
+            // Populate table
+            entries.forEach((entry, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${entry.name}</td>
+                    <td>₹ ${entry.amount.toFixed(2)}</td>
+                    <td>
+                        <button 
+                            onclick="removeEntry(${index})" 
+                            class="remove-btn"
+                        >
+                            Remove
+                        </button>
+                    </td>
+                `;
+                table.appendChild(row);
+            });
+
+            // Update total amount
+            totalAmountElement.innerText = totalAmount.toFixed(2);
+        }
+
+        // Generate professional notice image
+        function generateImage() {
+            if (entries.length === 0) {
+                alert("No entries to generate a notice!");
+                return;
+            }
+
+            const canvas = document.getElementById("noticeCanvas");
+            const ctx = canvas.getContext("2d");
+
+            // Set canvas dimensions
+            canvas.width = 800;
+            canvas.height = 600;
+
+            // Background
+            ctx.fillStyle = '#f0f0f0';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Header
+            ctx.fillStyle = '#2196F3';
+            ctx.fillRect(0, 0, canvas.width, 100);
+
+            // Header Text
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 40px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('PENALTY NOTICE', canvas.width / 2, 60);
+
+            // Border
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
+
+            // Content
+            ctx.fillStyle = '#333';
+            ctx.font = '20px Arial';
+            ctx.textAlign = 'left';
+
+            // Date
+            const currentDate = formatDate(new Date());
+            ctx.fillText(`Date: ${currentDate}`, 50, 150);
+
+            // Penalty Reason
+            ctx.font = 'bold 24px Arial';
+            ctx.fillText('Penalty Reason:', 50, 200);
+            ctx.font = '20px Arial';
+            ctx.fillText(PENALTY_REASON, 50, 230);
+
+            // Entries Table
+            ctx.font = 'bold 22px Arial';
+            ctx.fillText('Penalty Details:', 50, 300);
+
+            ctx.font = '18px Arial';
+            ctx.fillText('Name', 50, 330);
+            ctx.fillText('Amount (₹)', 300, 330);
+
+            // Draw entries
+            entries.forEach((entry, index) => {
+                ctx.fillText(entry.name, 50, 360 + index * 30);
+                ctx.fillText(entry.amount.toFixed(2), 300, 360 + index * 30);
+            });
+
+            // Total Amount
+            const totalAmount = entries.reduce((sum, entry) => sum + entry.amount, 0);
+            ctx.font = 'bold 22px Arial';
+            ctx.fillText(`Total Penalty: ₹ ${totalAmount.toFixed(2)}`, 50, 520);
+
+            // Enable download
+            const imgURL = canvas.toDataURL("image/png");
+            const downloadBtn = document.getElementById("downloadBtn");
+            downloadBtn.href = imgURL;
+            downloadBtn.style.display = "inline-block";
+        }
+    </script>
+</body>
+</html>
