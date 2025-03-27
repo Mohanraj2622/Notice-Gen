@@ -1,10 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Training Penalty Notice Generator</title>
+    <title>Enhanced Training Penalty Notice Generator</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -13,6 +12,7 @@
             --text-color: #333;
             --background-color: #f4f4f6;
             --white: #ffffff;
+            --error-color: #F44336;
         }
 
         * {
@@ -30,13 +30,14 @@
             min-height: 100vh;
             line-height: 1.6;
             color: var(--text-color);
+            padding: 20px;
         }
 
         .container {
             background-color: var(--white);
             border-radius: 16px;
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08);
-            max-width: 600px;
+            max-width: 800px;
             width: 100%;
             overflow: hidden;
             border: 1px solid rgba(0, 0, 0, 0.05);
@@ -101,7 +102,7 @@
         }
 
         .remove-btn {
-            background-color: #F44336;
+            background-color: var(--error-color);
             color: white;
             border: none;
             padding: 5px 10px;
@@ -139,7 +140,7 @@
         }
 
         #downloadBtn {
-            background-color: #F44336;
+            background-color: var(--error-color);
             color: var(--white);
             display: none;
         }
@@ -156,7 +157,14 @@
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
         }
 
-        /* Existing styles remain the same, add these responsive modifications */
+        .custom-select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
 
         @media screen and (max-width: 768px) {
             .container {
@@ -174,7 +182,8 @@
             }
 
             .input-group input,
-            .input-group button {
+            .input-group button,
+            .custom-select {
                 width: 100%;
                 padding: 10px;
             }
@@ -220,7 +229,6 @@
             }
         }
 
-        /* Additional small tweaks for smaller screens */
         @media screen and (max-height: 600px) {
             .container {
                 max-height: 95vh;
@@ -229,11 +237,22 @@
         }
     </style>
 </head>
-
 <body>
-
     <div class="container">
         <div class="input-section">
+            <select id="penaltyReason" class="custom-select">
+                <option value="" disabled selected>Select Penalty Reason</option>
+                <option value="Using indian language in training">Using indian language in training</option>
+                <option value="Late arrival to training">Late arrival to training</option>
+                <option value="Unprofessional conduct">Unprofessional conduct</option>
+                <option value="Violation of training guidelines">Violation of training guidelines</option>
+                <option value="Other">Other</option>
+            </select>
+
+            <div id="otherReasonContainer" style="display:none;">
+                <input type="text" id="otherReason" placeholder="Specify other reason">
+            </div>
+
             <div class="input-group">
                 <input type="text" id="name" placeholder="Enter Name">
                 <input type="number" id="amount" placeholder="Enter Amount">
@@ -270,11 +289,25 @@
     <script>
         // Global variables
         let entries = [];
-        const PENALTY_REASON = "English-Only Training Violation";
+        let selectedPenaltyReason = '';
+
+        // Penalty reason selection event listener
+        document.getElementById('penaltyReason').addEventListener('change', function() {
+            const otherReasonContainer = document.getElementById('otherReasonContainer');
+            const otherReasonInput = document.getElementById('otherReason');
+            selectedPenaltyReason = this.value;
+
+            if (selectedPenaltyReason === 'Other') {
+                otherReasonContainer.style.display = 'block';
+            } else {
+                otherReasonContainer.style.display = 'none';
+                otherReasonInput.value = '';
+            }
+        });
 
         // Utility function to format date
         function formatDate(date) {
-            return date.toLocaleDateString('en-US', {
+            return date.toLocaleDateString('en-IN', {
                 day: 'numeric',
                 month: 'long',
                 year: 'numeric'
@@ -287,6 +320,23 @@
             const amountInput = document.getElementById("amount");
             const name = nameInput.value.trim();
             const amount = amountInput.value.trim();
+
+            // Validate penalty reason
+            if (!selectedPenaltyReason) {
+                alert("Please select a penalty reason");
+                return;
+            }
+
+            // If 'Other' is selected, validate the custom reason
+            if (selectedPenaltyReason === 'Other') {
+                const otherReasonInput = document.getElementById('otherReason');
+                const otherReason = otherReasonInput.value.trim();
+                if (!otherReason) {
+                    alert("Please specify the reason");
+                    return;
+                }
+                selectedPenaltyReason = otherReason;
+            }
 
             // Enhanced validation
             if (name === "") {
@@ -352,7 +402,6 @@
             totalAmountElement.innerText = totalAmount.toFixed(2);
         }
 
-        // Generate professional notice image
         function generateImage() {
             if (entries.length === 0) {
                 alert("No entries to generate a notice!");
@@ -362,62 +411,109 @@
             const canvas = document.getElementById("noticeCanvas");
             const ctx = canvas.getContext("2d");
 
-            // Set canvas dimensions
-            canvas.width = 800;
-            canvas.height = 600;
+            // Dynamically adjust canvas height based on entries
+            const baseHeight = 750;
+            const entryHeight = 50;
+            const extraHeight = entries.length > 1 ? (entries.length - 1) * entryHeight : 0;
+            canvas.width = 1000;
+            canvas.height = baseHeight + extraHeight;
+
+            // Color Palette
+            const colors = {
+                background: '#f4f6f9',
+                header: '#2c3e50',
+                headerText: '#ffffff',
+                accentBlue: '#3498db',
+                textDark: '#2c3e50',
+                textLight: '#34495e',
+                divider: 'rgba(0,0,0,0.1)'
+            };
 
             // Background
-            ctx.fillStyle = '#f0f0f0';
+            ctx.fillStyle = colors.background;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Gradient Background
+            const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+            gradient.addColorStop(0, '#f4f6f9');
+            gradient.addColorStop(1, '#e9ebf0');
+            ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             // Header
-            ctx.fillStyle = '#2196F3';
-            ctx.fillRect(0, 0, canvas.width, 100);
+            ctx.fillStyle = colors.header;
+            ctx.fillRect(0, 0, canvas.width, 150);
 
             // Header Text
-            ctx.fillStyle = 'white';
-            ctx.font = 'bold 40px Arial';
+            ctx.fillStyle = colors.headerText;
+            ctx.font = 'bold 58px "Inter", Arial, sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText('PENALTY NOTICE', canvas.width / 2, 60);
+            ctx.fillText('PENALTY NOTICE', canvas.width / 2, 100);
 
-            // Border
-            ctx.strokeStyle = '#333';
-            ctx.lineWidth = 3;
-            ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
+            // Decorative Elements
+            ctx.strokeStyle = colors.accentBlue;
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(50, 130);
+            ctx.lineTo(canvas.width - 50, 130);
+            ctx.stroke();
 
-            // Content
-            ctx.fillStyle = '#333';
-            ctx.font = '20px Arial';
+            // Logo/Watermark (Simplified)
+            ctx.fillStyle = colors.accentBlue;
+            ctx.font = 'bold 24px "Inter", Arial, sans-serif';
             ctx.textAlign = 'left';
+            ctx.fillText('Remi', 50, 60);
+            
 
+            // Content Sections
+            ctx.fillStyle = colors.textDark;
+            
             // Date
+            ctx.font = '22px "Inter", Arial, sans-serif';
             const currentDate = formatDate(new Date());
-            ctx.fillText(`Date: ${currentDate}`, 50, 150);
+            ctx.fillText(`Date: ${currentDate}`, 50, 220);
 
             // Penalty Reason
-            ctx.font = 'bold 24px Arial';
-            ctx.fillText('Penalty Reason:', 50, 200);
-            ctx.font = '20px Arial';
-            ctx.fillText(PENALTY_REASON, 50, 230);
+            ctx.font = 'bold 26px "Inter", Arial, sans-serif';
+            ctx.fillText('Penalty Reason:', 50, 280);
+            ctx.font = '22px "Inter", Arial, sans-serif';
+            ctx.fillText(selectedPenaltyReason, 50, 320);
 
-            // Entries Table
-            ctx.font = 'bold 22px Arial';
-            ctx.fillText('Penalty Details:', 50, 300);
+            // Table Header
+            ctx.font = 'bold 24px "Inter", Arial, sans-serif';
+            ctx.fillText('Penalty Details:', 50, 400);
 
-            ctx.font = '18px Arial';
-            ctx.fillText('Name', 50, 330);
-            ctx.fillText('Amount (₹)', 300, 330);
+            // Table Headers
+            ctx.font = 'bold 20px "Inter", Arial, sans-serif';
+            ctx.fillText('Name', 50, 450);
+            ctx.fillText('Amount (₹)', 350, 450);
+
+            // Divider
+            ctx.strokeStyle = colors.divider;
+            ctx.beginPath();
+            ctx.moveTo(50, 470);
+            ctx.lineTo(canvas.width - 50, 470);
+            ctx.stroke();
 
             // Draw entries
+            ctx.font = '20px "Inter", Arial, sans-serif';
             entries.forEach((entry, index) => {
-                ctx.fillText(entry.name, 50, 360 + index * 30);
-                ctx.fillText(entry.amount.toFixed(2), 300, 360 + index * 30);
+                const yPosition = 500 + index * 50;
+                ctx.fillText(entry.name, 50, yPosition);
+                ctx.fillText(entry.amount.toFixed(2), 350, yPosition);
             });
 
             // Total Amount
             const totalAmount = entries.reduce((sum, entry) => sum + entry.amount, 0);
-            ctx.font = 'bold 22px Arial';
-            ctx.fillText(`Total Penalty: ₹ ${totalAmount.toFixed(2)}`, 50, 520);
+            ctx.font = 'bold 28px "Inter", Arial, sans-serif';
+            const totalYPosition = 500 + entries.length * 50 + 100;
+            ctx.fillText(`Total Penalty: ₹ ${totalAmount.toFixed(2)}`, 50, totalYPosition);
+
+            // Footer Note
+            ctx.font = '18px "Inter", Arial, sans-serif';
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.textAlign = 'center';
+            ctx.fillText('This is an automatically generated penalty notice', canvas.width / 2, canvas.height - 50);
 
             // Enable download
             const imgURL = canvas.toDataURL("image/png");
@@ -427,5 +523,4 @@
         }
     </script>
 </body>
-
 </html>
