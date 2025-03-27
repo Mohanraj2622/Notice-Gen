@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -92,7 +93,8 @@
             margin-bottom: 20px;
         }
 
-        table th, table td {
+        table th,
+        table td {
             border: 1px solid #e0e0e0;
             padding: 12px;
             text-align: center;
@@ -120,7 +122,8 @@
             gap: 15px;
         }
 
-        #generateBtn, #downloadBtn {
+        #generateBtn,
+        #downloadBtn {
             flex-grow: 1;
             padding: 12px 20px;
             border-radius: 8px;
@@ -152,10 +155,83 @@
             max-width: 100%;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
         }
+
+        /* Existing styles remain the same, add these responsive modifications */
+
+        @media screen and (max-width: 768px) {
+            .container {
+                margin: 20px;
+                border-radius: 12px;
+            }
+
+            .input-section {
+                padding: 15px;
+            }
+
+            .input-group {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .input-group input,
+            .input-group button {
+                width: 100%;
+                padding: 10px;
+            }
+
+            table {
+                font-size: 14px;
+            }
+
+            .button-group {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            #generateBtn,
+            #downloadBtn {
+                padding: 10px;
+            }
+
+            #noticeCanvas {
+                max-width: 100%;
+                width: 100%;
+            }
+        }
+
+        @media screen and (max-width: 480px) {
+            body {
+                min-height: 100dvh;
+            }
+
+            .container {
+                margin: 10px;
+                width: calc(100% - 20px);
+            }
+
+            table th,
+            table td {
+                padding: 8px;
+            }
+
+            .total-amount {
+                font-size: 16px;
+                text-align: center;
+            }
+        }
+
+        /* Additional small tweaks for smaller screens */
+        @media screen and (max-height: 600px) {
+            .container {
+                max-height: 95vh;
+                overflow-y: auto;
+            }
+        }
     </style>
 </head>
+
 <body>
-    
+
     <div class="container">
         <div class="input-section">
             <div class="input-group">
@@ -163,7 +239,7 @@
                 <input type="number" id="amount" placeholder="Enter Amount">
                 <button onclick="addEntry()">Add</button>
             </div>
-            
+
             <table>
                 <thead>
                     <tr>
@@ -174,18 +250,18 @@
                 </thead>
                 <tbody id="entryTable"></tbody>
             </table>
-            
+
             <div class="total-amount">
                 <span>Total Amount: ₹ </span>
                 <span id="totalAmount">0</span>
             </div>
-            
+
             <div class="button-group">
                 <button id="generateBtn" onclick="generateImage()">Generate Notice</button>
                 <a id="downloadBtn" href="#" download="training_penalty_notice.png">Download Image</a>
             </div>
         </div>
-        
+
         <div id="noticePreview">
             <canvas id="noticeCanvas"></canvas>
         </div>
@@ -224,8 +300,8 @@
             }
 
             // Add entry
-            entries.push({ 
-                name, 
+            entries.push({
+                name,
                 amount: parseFloat(amount),
                 timestamp: new Date()
             });
@@ -233,7 +309,7 @@
             // Reset inputs
             nameInput.value = "";
             amountInput.value = "";
-            
+
             updateTable();
         }
 
@@ -247,7 +323,7 @@
         function updateTable() {
             const table = document.getElementById("entryTable");
             const totalAmountElement = document.getElementById("totalAmount");
-            
+
             // Clear existing table
             table.innerHTML = "";
 
@@ -351,4 +427,5 @@
         }
     </script>
 </body>
+
 </html>
